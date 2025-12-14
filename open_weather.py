@@ -23,17 +23,10 @@ city_bank = ["Detroit", "Chicago", "Los Angeles", "New York", "Miami", "Seattle"
             "Cheyenne", "Rapid City", "Flagstaff"]
 
 
-def offset_weather(): #pagination #avoid duplicates
-    conn = sqlite3.connect("project.db")
-    cur = conn.cursor()
-    cur.execute("SELECT COUNT(*) FROM weather")
-    offset = cur.fetchone()[0]
-    conn.close()
-    return offset
 
 conn = sqlite3.connect("project.db")
 cur = conn.cursor()
-cur.execute("SELECT id, name FROM cities WHERE id NOT IN (SELECT city_id FROM weather)")
+cur.execute("SELECT name FROM cities WHERE id IN (SELECT city_id FROM weather)")
 listed_cities = [row[0] for row in cur.fetchall()]
 
 cities_list = []
@@ -47,10 +40,8 @@ for city_name in cities_list:
     base = "https://api.openweathermap.org/data/2.5/weather"
     params = {
             "appid": open_weather_api,
-            "q": city,
+            "q": city_name,
             "units": "metric",
-            "offset": offset_weather(),
-            "limit": limit
         }
     response = requests.get(base, params=params)
     info = response.json()
@@ -72,11 +63,3 @@ cur.execute("SELECT COUNT(*) FROM cities")
 print(cur.fetchone()[0])
 conn.close()
 print("Data from OpenWeather has been stored.")
-
-
-
-        # skip if a city is not found
-        #if info.get("cod") != 200:
-       #     print("Error for", city, "->", info.get("message"))
-        #    continue
-
