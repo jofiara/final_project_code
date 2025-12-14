@@ -6,7 +6,7 @@ def setup_database():
 
     #cuisines table
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS Cuisines (
+    CREATE TABLE IF NOT EXISTS cuisines (
         id INTEGER PRIMARY KEY,
         name TEXT UNIQUE
     );
@@ -14,7 +14,7 @@ def setup_database():
 
     # for recipies table
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS Recipes (
+    CREATE TABLE IF NOT EXISTS recipes (
         id INTEGER PRIMARY KEY,
         recipe_id INTEGER UNIQUE,
         title TEXT,
@@ -26,7 +26,7 @@ def setup_database():
 
     # for ingredients table 
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS Ingredients (
+    CREATE TABLE IF NOT EXISTS ingredients (
         id INTEGER PRIMARY KEY,
         name TEXT UNIQUE
     );
@@ -34,7 +34,7 @@ def setup_database():
 
     #specific ingredient relationships
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS Recipe_Ingredients (
+    CREATE TABLE IF NOT EXISTS recipe_ingredients (
         recipe_id INTEGER,
         ingredient_id INTEGER,
         UNIQUE(recipe_id, ingredient_id)
@@ -43,7 +43,7 @@ def setup_database():
 
     # for restaurants table
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS Restaurants (
+    CREATE TABLE IF NOT EXISTS restaurants (
         id INTEGER PRIMARY KEY,
         place_id TEXT UNIQUE,
         name TEXT,
@@ -57,7 +57,7 @@ def setup_database():
 
     # weather - might remove last line
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS Weather (
+    CREATE TABLE IF NOT EXISTS weather (
         id INTEGER PRIMARY KEY,
         city_id INTEGER UNIQUE,
         main_group TEXT
@@ -67,7 +67,7 @@ def setup_database():
 
     #cities
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS Cities (
+    CREATE TABLE IF NOT EXISTS cities (
         id INTEGER PRIMARY KEY,
         name TEXT UNIQUE 
     );
