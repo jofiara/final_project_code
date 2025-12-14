@@ -13,18 +13,26 @@ def offset_recipes(): #pagination #avoid duplicates
     conn.close()
     return offset
     
-def get_cuisine(cur, cuisine):
+def get_cuisine(cur, cuisine): #add into cuisine table
     cur.execute("INSERT OR IGNORE INTO cuisines (name) VALUES (?)", (cuisine,))
     cur.execute("SELECT id FROM cuisines WHERE name=?", (cuisine,))
     c_result = cur.fetchone()[0]
     return c_result
 
 
-def get_ingredient(cur, name):
+def get_ingredient(cur, name): #add into ingredient table
     cur.execute("INSERT OR IGNORE INTO ingredients (name) VALUES (?)", (name,))
     cur.execute("SELECT id FROM ingredients WHERE name=?", (name,))
     i_result = cur.fetchone()[0]
     return i_result
+
+def recipe_ingredients(recipe_id):
+    base = f"https://api.spoonacular.com/recipes/{recipe_id}/information"
+    params = {"apiKey": spoonacular_api}
+    response = requests.get(base, params=params)
+    info = response.json()
+    return info.get("extendedIngredients", [])
+
 
 offset = offset_recipes()
 
@@ -56,13 +64,13 @@ for recipe in results:
     cur.execute("SELECT id FROM recipes WHERE spoon_id=?", (recipe["id"],))
     recipe_id = cur.fetchone()[0]
 
-    ext_ingredients = recipe.get("extendedIngredients", [])
-    if ext_ingredients:
-        for ing in ext_ingredients:
-            ing_id = get_ingredient(cur, ing["name"])
-            cur.execute("INSERT OR IGNORE INTO recipe_ingredients VALUES (?, ?)", (recipe_id, ing_id))
+    ext_ingredients = recipe_ingredients(recipe["id"]) #handle if field does not exist
+    for ing in ext_ingredients:
+        name = ing.get("name", "Unknown")
+        ing_id = get_ingredient(cur, name)
+        cur.execute("INSERT OR IGNORE INTO recipe_ingredients VALUES (?, ?)", (recipe_id, ing_id))
 
 conn.commit()
 conn.close()
-print("Data from Spoonacular has been stored.")
+print("Data from Spoonacular has been stored.") #confirm everything ran
 
