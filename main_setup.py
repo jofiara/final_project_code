@@ -16,10 +16,10 @@ def setup_database():
     cur.execute("""
     CREATE TABLE IF NOT EXISTS recipes (
         id INTEGER PRIMARY KEY,
-        recipe_id INTEGER UNIQUE,
+        spoon_id INTEGER UNIQUE,
         title TEXT,
-        cuisine_id INTEGER
-        ready_time INTEGER
+        cuisine_id INTEGER,
+        ready_time INTEGER,
         source TEXT
     );
     """)
@@ -60,7 +60,7 @@ def setup_database():
     CREATE TABLE IF NOT EXISTS weather (
         id INTEGER PRIMARY KEY,
         city_id INTEGER UNIQUE,
-        main_group TEXT
+        main_group TEXT,
         weather_des TEXT 
     );
     """)
