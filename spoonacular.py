@@ -69,7 +69,7 @@ for recipe in results:
         name = ing.get("name", "Unknown")
         ing_id = get_ingredient(cur, name)
         cur.execute("INSERT OR IGNORE INTO recipe_ingredients VALUES (?, ?)", (recipe_id, ing_id))
-
+#fix 25 limit for ingredients
 conn.commit()
 conn.close()
 print("Data from Spoonacular has been stored.") #confirm everything ran
