@@ -4,46 +4,72 @@ def setup_database():
     conn = sqlite3.connect("project.db")
     cur = conn.cursor()
 
+    #cuisines table
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS cuisines (
+        id INTEGER PRIMARY KEY,
+        name TEXT UNIQUE
+    );
+    """)
+
     # for recipies table
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS Recipes (
+    CREATE TABLE IF NOT EXISTS recipes (
         id INTEGER PRIMARY KEY,
-        recipe_id INTEGER UNIQUE,
+        spoon_id INTEGER UNIQUE,
         title TEXT,
-        cuisine TEXT,
-        ready_time INTEGER
+        cuisine_id INTEGER,
+        ready_time INTEGER,
+        source TEXT
     );
     """)
 
     # for ingredients table 
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS Ingredients (
+    CREATE TABLE IF NOT EXISTS ingredients (
         id INTEGER PRIMARY KEY,
+        name TEXT UNIQUE
+    );
+    """)
+
+    #specific ingredient relationships
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS recipe_ingredients (
         recipe_id INTEGER,
-        ingredient_name TEXT
+        ingredient_id INTEGER,
+        UNIQUE(recipe_id, ingredient_id)
     );
     """)
 
     # for restaurants table
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS Restaurants (
+    CREATE TABLE IF NOT EXISTS restaurants (
         id INTEGER PRIMARY KEY,
-        place_id TEXT UNIQUE,
+        geoapify_id TEXT UNIQUE,
         name TEXT,
-        city TEXT,
-        cuisine TEXT,
+        city_id INTEGER,
+        cuisine_id INTEGER,
         latitude REAL,
         longitude REAL,
         distance REAL
     );
     """)
 
-    # weather
+    # weather - might remove last line
     cur.execute("""
-    CREATE TABLE IF NOT EXISTS Weather (
+    CREATE TABLE IF NOT EXISTS weather (
         id INTEGER PRIMARY KEY,
-        city TEXT,
-        main_group TEXT
+        city_id INTEGER UNIQUE,
+        main_group TEXT,
+        weather_des TEXT 
+    );
+    """)
+
+    #cities
+    cur.execute("""
+    CREATE TABLE IF NOT EXISTS cities (
+        id INTEGER PRIMARY KEY,
+        name TEXT UNIQUE 
     );
     """)
 
