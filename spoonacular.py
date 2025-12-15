@@ -12,6 +12,14 @@ def offset_recipes(): #pagination #avoid duplicates
     offset = cur.fetchone()[0]
     conn.close()
     return offset
+
+def offset_ingredients(): #pagination #avoid duplicates
+    conn = sqlite3.connect("project.db")
+    cur = conn.cursor()
+    cur.execute("SELECT COUNT(*) FROM ingredients")
+    offset = cur.fetchone()[0]
+    conn.close()
+    return offset
     
 def get_cuisine(cur, cuisine): #add into cuisine table
     cur.execute("INSERT OR IGNORE INTO cuisines (name) VALUES (?)", (cuisine,))
@@ -26,15 +34,11 @@ def get_ingredient(cur, name): #add into ingredient table
     i_result = cur.fetchone()[0]
     return i_result
 
-def recipe_ingredients(recipe_id):
-    base = f"https://api.spoonacular.com/recipes/{recipe_id}/information"
-    params = {"apiKey": spoonacular_api}
-    response = requests.get(base, params=params)
-    info = response.json()
-    return info.get("extendedIngredients", [])
-
 
 offset = offset_recipes()
+
+ing_begin = offset_ingredients()
+ing_target = ing_begin + limit
 
 
 base = "https://api.spoonacular.com/recipes/complexSearch"
@@ -42,7 +46,8 @@ params = {
         "apiKey": spoonacular_api, 
         "number": limit,
         "offset": offset,
-        "addRecipeInformation": True
+        "addRecipeInformation": True,
+        "fillIngredients": True
         }
     
 
@@ -55,6 +60,7 @@ cur = conn.cursor()
 results = info.get('results', [])
 
 for recipe in results:
+    
     cuisine = recipe["cuisines"][0] if recipe["cuisines"] else "Unknown"
     cuisine_id = get_cuisine(cur, cuisine)
     cur.execute("""
@@ -64,16 +70,26 @@ for recipe in results:
     cur.execute("SELECT id FROM recipes WHERE spoon_id=?", (recipe["id"],))
     recipe_id = cur.fetchone()[0]
 
-    ext_ingredients = recipe_ingredients(recipe["id"]) #handle if field does not exist
+    ext_ingredients = recipe.get("extendedIngredients", []) #handle if field does not exist
+
     for ing in ext_ingredients:
+        cur.execute("SELECT COUNT(*) FROM ingredients")
+        ing_current = cur.fetchone()[0]
+
+        if ing_current>=ing_target:
+            break
+
         name = ing.get("name", "Unknown")
         ing_id = get_ingredient(cur, name)
         cur.execute("INSERT OR IGNORE INTO recipe_ingredients VALUES (?, ?)", (recipe_id, ing_id))
+        
 #fix 25 limit for ingredients!!!! and maybe restaurants double check
 #get more api keys
 
 conn.commit()
 cur.execute("SELECT COUNT(*) FROM recipes")
+print(cur.fetchone()[0])
+cur.execute("SELECT COUNT(*) FROM ingredients")
 print(cur.fetchone()[0])
 conn.close()
 print("Data from Spoonacular has been stored.") #confirm everything ran
