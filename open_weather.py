@@ -4,30 +4,9 @@ from api_key import open_weather_api
 
 limit = 25
 
-"""city_bank = ["Detroit", "Chicago", "Los Angeles", "New York", "Miami", "Seattle", "Boston",
-             "Houston", "Phoenix", "San Francisco", "San Diego", "Dallas", "Philadelphia",
-            "Atlanta", "Denver", "Minneapolis", "Portland", "Baltimore", "Washington",
-            "Las Vegas", "San Jose", "Orlando", "Sacramento", "Austin", "Columbus",
-            "Indianapolis", "Charlotte", "Nashville", "Louisville", "Milwaukee", "Kansas City",
-            "Cleveland", "Pittsburgh", "St. Louis", "Raleigh", "Tampa", "Jacksonville",
-            "Memphis", "Salt Lake City", "New Orleans", "Oklahoma City", "Albuquerque",
-            "Buffalo", "Cincinnati", "Omaha", "Richmond", "Hartford", "Birmingham",
-            "Anchorage", "Honolulu", "Madison", "Des Moines", "Fresno", "Rochester",
-            "Spokane", "Tulsa", "Boise", "Colorado Springs", "Wichita", "Tacoma",
-            "Lexington", "Baton Rouge", "Aurora", "St. Paul", "Chattanooga", "Grand Rapids",
-            "Knoxville", "Springfield", "Provo", "Santa Fe", "Sioux Falls", "Wilmington",
-            "Fort Wayne", "Dayton", "Lincoln", "Lansing", "Mobile", "Durham", "Augusta",
-            "Little Rock", "Oceanside", "Savannah", "Madison", "Boulder", "Sioux City",
-            "Santa Barbara", "Salem", "Eugene", "Worcester", "Toledo", "Huntsville",
-            "Santa Clara", "Santa Monica", "Naples", "Bismarck", "Billings", "Fargo",
-            "Cheyenne", "Rapid City", "Flagstaff"]"""
-
-
-
 conn = sqlite3.connect("project.db")
 cur = conn.cursor()
-#cur.execute("SELECT name FROM cities WHERE id IN (SELECT city_id FROM weather)")
-#listed_cities = [row[0] for row in cur.fetchall()]
+
 cur.execute("""
 SELECT DISTINCT c.name
 FROM restaurants r
