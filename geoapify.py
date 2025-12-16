@@ -7,6 +7,27 @@ new_restaurants = 0
 limit = 25
 
 city_locations = [
+    ("Ann Arbor", 42.2808, -83.7430),
+    ("Ypsilanti", 42.2411, -83.6129),
+    ("East Lansing", 42.7369, -84.4839),
+    ("Royal Oak", 42.4895, -83.1446),
+    ("Ferndale", 42.4606, -83.1346),
+    ("Dearborn", 42.3223, -83.1763),
+    ("Troy", 42.6064, -83.1498),
+    ("Bloomfield Hills", 42.5836, -83.2455),
+    ("Grosse Pointe", 42.3862, -82.9119),
+    ("Northville", 42.4311, -83.4830),
+    ("Evanston", 42.0451, -87.6877),
+    ("Oak Park", 41.8850, -87.7845),
+    ("Naperville", 41.7508, -88.1535),
+    ("Arlington Heights", 42.0884, -87.9806),
+    ("Skokie", 42.0324, -87.7416),
+
+    ("Cambridge", 42.3736, -71.1097),
+    ("Somerville", 42.3876, -71.0995),
+    ("Brookline", 42.3318, -71.1212),
+    ("Newton", 42.3370, -71.2092),
+    ("Quincy", 42.2529, -71.0023),
     ("Detroit", 42.3314, -83.0458),
     ("Chicago", 41.8781, -87.6298),
     ("New York", 40.7128, -74.0060),
@@ -113,13 +134,51 @@ city_locations = [
     ("Reno", 39.5296, -119.8138),
     ("Albany", 42.6526, -73.7562),
     ("Montgomery", 32.3792, -86.3077),
-    ("Columbia", 34.0007, -81.0348)
+    ("Columbia", 34.0007, -81.0348),
+    ("San Francisco", 37.7749, -122.4194),
+    ("Oakland", 37.8044, -122.2711),
+    ("Berkeley", 37.8715, -122.2730),
+    ("Palo Alto", 37.4419, -122.1430),
+    ("Mountain View", 37.3861, -122.0839),
+    ("Sunnyvale", 37.3688, -122.0363),
+    ("Redwood City", 37.4852, -122.2364),
+    ("Menlo Park", 37.4530, -122.1817),
+    ("Cupertino", 37.3229, -122.0322),
+    ("San Mateo", 37.5629, -122.3255),
+
+    ("Irvine", 33.6846, -117.8265),
+    ("Anaheim", 33.8366, -117.9143),
+    ("Pasadena", 34.1478, -118.1445),
+    ("Glendale", 34.1425, -118.2551),
+    ("Burbank", 34.1808, -118.3090),
+    ("Torrance", 33.8358, -118.3406),
+    ("Long Beach", 33.7701, -118.1937),
+    ("Redondo Beach", 33.8492, -118.3884),
+    ("Manhattan Beach", 33.8847, -118.4109),
+    ("El Segundo", 33.9192, -118.4165),
+    ("Palo Alto", 37.4419, -122.1430),
+    ("Santa Rosa", 38.4404, -122.7141),
+    ("Petaluma", 38.2324, -122.6367),
+    ("Napa", 38.2975, -122.2869),
+    ("Sonoma", 38.2919, -122.4580),
+    ("Vallejo", 38.1041, -122.2566),
+    ("Fairfield", 38.2494, -122.0399),
+    ("Vacaville", 38.3566, -121.9877),
+    ("Davis", 38.5449, -121.7405),
+    ("Woodland", 38.6785, -121.7733),
+
+    ("Santa Cruz", 36.9741, -122.0308),
+    ("Monterey", 36.6002, -121.8947),
+    ("Carmel", 36.5552, -121.9233),
+    ("Salinas", 36.6777, -121.6555),
+    ("Watsonville", 36.9102, -121.7569)
 ]
 #need to fix this
+
 def offset_cities(): #pagination #avoid duplicates
     conn = sqlite3.connect("project.db")
     cur = conn.cursor()
-    cur.execute("SELECT COUNT(DISTINCT city_id) FROM restaurants")
+    cur.execute("SELECT COUNT(*) FROM cities")
     offset = cur.fetchone()[0]
     conn.close()
     return offset
@@ -138,14 +197,11 @@ cur = conn.cursor()
 
 for city_name, lat, lon in cities:
 
-    cur.execute("INSERT OR IGNORE INTO cities (name) VALUES (?)", (city_name,))
-    cur.execute("SELECT id FROM cities WHERE name=?", (city_name,))
-    city_id = cur.fetchone()[0]
 
     base = 'https://api.geoapify.com/v2/places?'
     params = {
         "categories": "catering.restaurant",
-        "filter":f"circle:{lon},{lat},50000", #ann arbor latitude and longitude
+        "filter":f"circle:{lon},{lat},5000", #ann arbor latitude and longitude
         "offset": 0,
         "apiKey": geoapify_api_places,
         "limit": 1
@@ -153,6 +209,10 @@ for city_name, lat, lon in cities:
     response = requests.get(base, params=params)
     info = response.json()
     places = info.get('features', [])
+
+    if not places:
+        continue
+
 
     for place in places:
         if new_restaurants>=limit:
@@ -164,17 +224,25 @@ for city_name, lat, lon in cities:
         cur.execute("""
         INSERT OR IGNORE INTO restaurants
         (geoapify_id, name, city_id, cuisine_id, latitude, longitude, distance)
-        VALUES (?, ?, ?, ?, ?, ?, ?)""", (properties["place_id"], properties.get("name", "Unknown"),
-        city_id, cuisine_id, properties["lat"], properties["lon"], properties.get("distance", 0)))
+        VALUES (?, ?, NULL, ?, ?, ?, ?)""", (properties["place_id"], properties.get("name", "Unknown"),
+         cuisine_id, properties["lat"], properties["lon"], properties.get("distance", 0)))
 
         cur.execute("SELECT changes()")
-        if cur.fetchone()[0]==1:
+        changes = cur.fetchone()[0]
+        if changes==0:
+            continue
+        elif changes==1:
             new_restaurants +=1
+
+
+        cur.execute("INSERT INTO cities (name) VALUES (?)", (city_name,))
+        city_id = cur.lastrowid
+        cur.execute("UPDATE restaurants SET city_id=? WHERE geoapify_id=?", (city_id, properties["place_id"]))
     
 conn.commit()
 cur.execute("SELECT COUNT(*) FROM restaurants")
-print(cur.fetchone()[0])
+print(f"{cur.fetchone()[0]} restaurants in database.")
 cur.execute("SELECT COUNT(*) FROM cities")
-print(cur.fetchone()[0])
+print(f"{cur.fetchone()[0]} cities in database.")
 conn.close()
 print("Data from Geoapify has been stored.")
