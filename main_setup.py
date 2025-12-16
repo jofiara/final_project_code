@@ -73,8 +73,11 @@ def setup_database():
     );
     """)
 
+
     conn.commit()
     conn.close()
+
+    
 
 if __name__ == "__main__":
     setup_database()
