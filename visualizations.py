@@ -74,60 +74,63 @@ def create_bar_chart(database, cuisines):
     
 
 
-def create_scatter(database, city):
-    # scatter of restutrant locations in a city
+def create_horizontal_bar(cuisine_name, database, num = 10):
+
     conn = sqlite3.connect(database)
     cursor = conn.cursor()
-    
-    cursor.execute("SELECT id FROM cities WHERE name = ?", (city,))
-    city_result = cursor.fetchone()
-
-    city_id = city_result[0]
-
-    if not city_result:
-        print(f"City '{city}' not found in database")
 
     query = """
-    SELECT r.name, r.latitude, r.longitude, c.name as cuisine_name 
-    FROM restaurants r
-    LEFT JOIN cuisines c ON r.cuisine_id = c.id 
-    WHERE r.city_id = ?
+    SELECT i.name, COUNT(*) as count
+    FROM ingredients i
+    JOIN recipe_ingredients ri ON i.id = ri.ingredient_id
+    JOIN recipes r ON ri.recipe_id = r.id
+    JOIN cuisines c ON r.cuisine_id = c.id
+    WHERE c.name = ?
+    GROUP BY i.name
+    ORDER BY count DESC
+    LIMIT ?
     """
-    
-    cursor.execute(query, (city_id,))
-    results = cursor.fetchall()
+
+    cursor.execute(query, (cuisine_name, num))
+    result = cursor.fetchall()
     
     conn.close()
-    
-    if not results:
-        print(f"No restaurants found in {city}")
+
+    if not result:
+        print(f"No data found for cuisine: {cuisine_name}")
         return
-    
-    #load data
-    names = []
-    lats = []
-    lons = []
-    cuisines = []
 
-    for name, lat, lon, cuisine in results:
-        names.append(name)
-        lats.append(lat)
-        lons.append(lon)
-        cuisines.append(cuisine)
+    ingredients = []
+    counts = []
     
-    #scatter
-    plt.scatter(lons, lats, color='gray', s=30)
-    plt.title(f'Restaurants in {city}', fontsize= 13, fontfamily='Times New Roman')
-    plt.xlabel('Longitude', fontsize=11, fontfamily='Times New Roman')
-    plt.ylabel('Latitude', fontsize=11, fontfamily='Times New Roman')
+    for ingredient_name, count in result:
+        ingredients.append(ingredient_name)
+        counts.append(count)
 
-    plt.xticks(fontsize=9, fontfamily='Times New Roman')
-    plt.yticks(fontsize=9, fontfamily='Times New Roman')
+    ingredients.reverse()
+    counts.reverse()
 
-    plt.grid(True)
+    color_palette = [
+        '#c49c94', '#f7b6d2', '#c7c7c7', '#dbdb8d', '#9edae5',
+        '#aec7e8', '#ffbb78', '#98df8a', '#ff9896', '#c5b0d5',
+        '#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd',
+        '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf',
+    ]
+
+    colors = color_palette[:len(ingredients)]
+    colors.reverse()
     
-    for name, lon, lat in zip(names, lons, lats):
-        plt.text(lon, lat, name, fontsize=9, fontfamily='Times New Roman')
+    y_pos = range(len(ingredients))
+    bars = plt.barh(y_pos, counts, color=colors, height=0.7)
+
+    plt.yticks(y_pos, ingredients, fontsize=10, fontfamily='Times New Roman')
+    plt.xlabel('Number of Recipes Using Ingredient', fontsize=11, fontfamily='Times New Roman')
+    plt.title(f'Top {num} Ingredients in {cuisine_name} Cuisine', fontsize=13, fontfamily='Times New Roman')
+
+    for i, (bar, count) in enumerate(zip(bars, counts)):
+        width = bar.get_width()
+        plt.text(width + max(counts)*0.01, i, str(count), 
+                va='center', fontsize=9, fontfamily='Times New Roman')
     
 
 def create_pie_chart(database):
@@ -192,7 +195,7 @@ def show_all_charts(database, cuisines, city):
     
     # Second chart  
     plt.subplot(1, 3, 2)
-    create_scatter(database, city)
+    create_horizontal_bar(cuisines[0], database)
 
     # Third chart
     plt.subplot(1, 3, 3)
@@ -201,4 +204,4 @@ def show_all_charts(database, cuisines, city):
     plt.tight_layout()
     plt.show()
 
-show_all_charts("project.db", ["Indian", "Mexican", "Chinese"], "Detroit")
+show_all_charts("project.db", ["Unknown", "Mexican", "Chinese"], "Detroit")
