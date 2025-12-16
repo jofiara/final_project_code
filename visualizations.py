@@ -178,30 +178,76 @@ def create_pie_chart(database):
         color = weather_colors.get(condition, 'lightgreen')
         colors.append(color)
     
-
-    plt.pie(counts, labels=conditions, colors=colors, autopct='%1.1f%%', wedgeprops={'edgecolor': 'black', 'linewidth': 0.2}, textprops={'fontfamily': 'Times New Roman'})
+    wedges, texts, autotexts = plt.pie(counts, labels=conditions, colors=colors, autopct='%1.1f%%', wedgeprops={'edgecolor': 'black', 'linewidth': 0.2}, textprops={'fontfamily': 'Times New Roman'})
+        
+    for autotext in autotexts:
+        autotext.set_fontfamily('Times New Roman')
+        autotext.set_fontsize(6)
     plt.title('Distribution of Weather Conditions Across Cities', fontsize=12, fontfamily='Times New Roman')
     
 
+def create_box_plot(database):
+    conn = sqlite3.connect(database)
+    cursor = conn.cursor()
 
-def show_all_charts(database, cuisines, city):
+    query = """
+    SELECT c.name AS cuisine_name, r.ready_time
+    FROM recipes r
+    JOIN cuisines c ON r.cuisine_id = c.id
+    WHERE r.ready_time IS NOT NULL
+    ORDER BY c.name
+    """
+
+    cursor.execute(query)
+    result = cursor.fetchall()
+    conn.close()
+
+    if not result:
+        print("No data found.")
+        return
+
+    cuisine_times = {}
+    for cuisine, time in result:
+        if cuisine not in cuisine_times:
+            cuisine_times[cuisine] = []
+        cuisine_times[cuisine].append(time)
+
+    labels = list(cuisine_times.keys())
+    data_lis = list(cuisine_times.values())
+    plt.boxplot(data_lis, tick_labels=labels)
+
+    plt.title('Average Cooking Time per Cuisine',fontsize=12, fontfamily='Times New Roman')
+    plt.xlabel('Cuisine',fontsize=11, fontfamily='Times New Roman')
+    plt.ylabel('Ready Time (minutes)',fontsize=11, fontfamily='Times New Roman')
+    plt.xticks(rotation=45, ha='right', fontsize=9, fontfamily='Times New Roman')
+    plt.yticks(fontsize=9, fontfamily='Times New Roman')
+
+    plt.grid(True, alpha=0.3)
+    plt.ylim(0, 200)
+
+
+def show_all_charts(database, cuisines):
     # database = db file str, list of cuisines, city str
 
-    plt.figure(figsize=(15, 5))
+    plt.figure(figsize=(15, 10))
     
     # First chart
-    plt.subplot(1, 3, 1)
-    create_bar_chart(database, cuisines)
+    plt.subplot(2, 2, 1)
+    create_bar_chart(database, cuisines[1::])
     
     # Second chart  
-    plt.subplot(1, 3, 2)
+    plt.subplot(2, 2, 2)
     create_horizontal_bar(cuisines[0], database)
 
     # Third chart
-    plt.subplot(1, 3, 3)
+    plt.subplot(2, 2, 3)
     create_pie_chart(database)
+
+    # Fourth chart
+    plt.subplot(2, 2, 4)
+    create_box_plot(database)
     
     plt.tight_layout()
     plt.show()
 
-show_all_charts("project.db", ["Unknown", "Mexican", "Chinese"], "Detroit")
+show_all_charts("project.db", ["Unknown", "Mexican", "Chinese", "Mediterranean"])
