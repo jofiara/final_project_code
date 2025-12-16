@@ -59,6 +59,11 @@ cur = conn.cursor()
 
 results = info.get('results', [])
 
+links = 0
+cur.execute("SELECT COUNT(*) from recipe_ingredients")
+start = cur.fetchone()[0]
+target = start+limit
+
 for recipe in results:
     
     cuisine = recipe["cuisines"][0] if recipe["cuisines"] else "Unknown"
@@ -81,16 +86,19 @@ for recipe in results:
 
         name = ing.get("name", "Unknown")
         ing_id = get_ingredient(cur, name)
+        if start + links>=target:
+            break
         cur.execute("INSERT OR IGNORE INTO recipe_ingredients VALUES (?, ?)", (recipe_id, ing_id))
-        
+        if cur.rowcount==1:
+            links +=1
 #fix 25 limit for ingredients!!!! and maybe restaurants double check
 #get more api keys
 
 conn.commit()
 cur.execute("SELECT COUNT(*) FROM recipes")
-print(cur.fetchone()[0])
+print(f"{cur.fetchone()[0]} recipes in database.")
 cur.execute("SELECT COUNT(*) FROM ingredients")
-print(cur.fetchone()[0])
+print(f"{cur.fetchone()[0]} ingredients in database.")
 conn.close()
 print("Data from Spoonacular has been stored.") #confirm everything ran
 
