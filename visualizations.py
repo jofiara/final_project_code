@@ -7,15 +7,39 @@ def create_bar_chart(database, cuisines):
     cursor = conn.cursor()
     placeholders = ', '.join(['?'] * len(cuisines))
     
+    query_ids = f"""
+    SELECT id, name 
+    FROM cuisines 
+    WHERE name IN ({placeholders})
+    """
+
+    cursor.execute(query_ids, cuisines)
+    id_results = cursor.fetchall()
+
+    if not id_results:
+        print(f"No cuisines found matching: {cuisines}")
+        conn.close()
+        return
+
+    cuisine_ids = []
+    cuisine_names = []
+
+    for ids, names in id_results:
+        cuisine_ids.append(ids)
+        cuisine_names.append(names)
+
+    id_placeholders = ', '.join(['?'] * len(cuisine_ids))
+
     query = f"""
-    SELECT cuisine, COUNT(*) as recipe_count 
-    FROM Recipes 
-    WHERE cuisine IN ({placeholders})
-    GROUP BY cuisine 
+    SELECT r.cuisine_id, c.name, COUNT(*) as recipe_count 
+    FROM recipes r
+    JOIN cuisines c ON r.cuisine_id = c.id
+    WHERE r.cuisine_id IN ({id_placeholders})
+    GROUP BY r.cuisine_id, c.name
     ORDER BY recipe_count DESC
     """
 
-    cursor.execute(query, cuisines)
+    cursor.execute(query, cuisine_ids)
     results = cursor.fetchall()
     conn.close()
 
@@ -23,8 +47,8 @@ def create_bar_chart(database, cuisines):
     cuisines_list = []
     counts = []
 
-    for cuisine, count in results:
-        cuisines_list.append(cuisine)
+    for cuisine_id, cuisine_name, count in results:
+        cuisines_list.append(cuisine_name)
         counts.append(count)
 
     #bar
@@ -55,13 +79,22 @@ def create_scatter(database, city):
     conn = sqlite3.connect(database)
     cursor = conn.cursor()
     
+    cursor.execute("SELECT id FROM cities WHERE name = ?", (city,))
+    city_result = cursor.fetchone()
+
+    city_id = city_result[0]
+
+    if not city_result:
+        print(f"City '{city}' not found in database")
+
     query = """
-    SELECT name, latitude, longitude 
-    FROM Restaurants 
-    WHERE city = ?
+    SELECT r.name, r.latitude, r.longitude, c.name as cuisine_name 
+    FROM restaurants r
+    LEFT JOIN cuisines c ON r.cuisine_id = c.id 
+    WHERE r.city_id = ?
     """
     
-    cursor.execute(query, (city,))
+    cursor.execute(query, (city_id,))
     results = cursor.fetchall()
     
     conn.close()
@@ -74,11 +107,13 @@ def create_scatter(database, city):
     names = []
     lats = []
     lons = []
+    cuisines = []
 
-    for name, lat, lon in results:
+    for name, lat, lon, cuisine in results:
         names.append(name)
         lats.append(lat)
         lons.append(lon)
+        cuisines.append(cuisine)
     
     #scatter
     plt.scatter(lons, lats, color='gray', s=30)
@@ -101,9 +136,9 @@ def create_pie_chart(database):
     cursor = conn.cursor()
     
     query = """
-    SELECT main_group, COUNT(DISTINCT city) as city_count 
-    FROM Weather 
-    GROUP BY main_group 
+    SELECT w.main_group, COUNT(DISTINCT w.city_id) as city_count 
+    FROM Weather w
+    GROUP BY w.main_group 
     ORDER BY city_count DESC
     """
     
@@ -166,4 +201,4 @@ def show_all_charts(database, cuisines, city):
     plt.tight_layout()
     plt.show()
 
-show_all_charts("project.db", ["italian", "mexican", "chinese"], "Ann Arbor")
+show_all_charts("project.db", ["Indian", "Mexican", "Chinese"], "Detroit")
