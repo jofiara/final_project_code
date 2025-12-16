@@ -169,7 +169,7 @@ def create_pie_chart(database):
         'Snow': 'white',
         'Thunderstorm': 'slategray',
         'Drizzle': 'skyblue',
-        'Mist': 'silver',
+        'Mist': 'lightpink',
         'Fog': 'darkgray'
     }
     
@@ -183,7 +183,7 @@ def create_pie_chart(database):
     for autotext in autotexts:
         autotext.set_fontfamily('Times New Roman')
         autotext.set_fontsize(6)
-    plt.title('Distribution of Weather Conditions Across Cities', fontsize=12, fontfamily='Times New Roman')
+    plt.title('Distribution of Restaurants by Weather Conditions', fontsize=12, fontfamily='Times New Roman')
     
 
 def create_box_plot(database):
